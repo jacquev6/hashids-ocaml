@@ -1,0 +1,33 @@
+language: python
+python: 3.4
+sudo: false
+addons:
+  apt:
+    sources:
+    - avsm
+    packages:
+    - ocaml
+    - ocaml-native-compilers
+    - opam
+install:
+  - opam init --yes
+  - opam update --yes  # in case we got ~/.opam from cache
+  - opam switch --yes --no-switch $TRAVIS_OPAM_SWITCH  # --no-switch to avoid modifying ~/.opam between jobs
+  - opam upgrade --yes --switch=$TRAVIS_OPAM_SWITCH
+  - opam install --yes --switch=$TRAVIS_OPAM_SWITCH ounit bisect core
+  - pip install Sphinx alabaster
+script:
+  - eval `opam config --yes --switch=$TRAVIS_OPAM_SWITCH env`; ./run_development_cycle.sh
+after_success:
+  - ./publish_documentation.sh
+after_script:
+  - opam remove --yes --switch=$TRAVIS_OPAM_SWITCH hashids
+  - opam pin --yes --switch=$TRAVIS_OPAM_SWITCH remove hashids
+env:
+  - TRAVIS_OPAM_SWITCH=4.01.0
+to_be_added_to_env_when_first_works:
+  - TRAVIS_OPAM_SWITCH=4.02.3
+  - TRAVIS_OPAM_SWITCH=4.03.0
+cache:
+  directories:
+  - $HOME/.opam

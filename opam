@@ -1,0 +1,25 @@
+opam-version: "1.2"
+name: "hashids"
+version: "1.0.0"
+maintainer: "Vincent Jacques <vincent@vincent-jacques.net>"
+authors: "Vincent Jacques <vincent@vincent-jacques.net>"
+homepage: "http://hashids.org/ocaml/"
+dev-repo: "https://github.com/jacquev6/hashids-ocaml.git"
+bug-reports: "http://github.com/jacquev6/hashids-ocaml/issues/"
+license: "MIT"
+build: [
+    ["corebuild" "-pkg" "oUnit" "Hashids.cma" "Hashids.cmxa"]
+]
+install: [
+    ["mkdir" "-p" "%{prefix}%/lib/hashids"]
+    ["cp"
+        "META"
+        "_build/Hashids.cmi" "_build/Hashids.cma" "_build/Hashids.a" "_build/Hashids.cmxa"
+        "%{prefix}%/lib/hashids"
+    ]
+]
+remove: ["ocamlfind" "remove" "hashids"]
+depends: [
+    "ocamlfind" {build}
+    "core"
+]
