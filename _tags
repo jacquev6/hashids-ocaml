@@ -1,0 +1,6 @@
+true: strict_sequence
+true: strict_formats
+true: safe_string
+true: use_menhir
+true: warn(@A-44)
+true: package(oUnit)

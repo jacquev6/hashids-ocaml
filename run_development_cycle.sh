@@ -1,27 +1,35 @@
 #!/bin/bash
 
-# Copyright 2016 Vincent Jacques <vincent@vincent-jacques.net>
+# Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net>
 
-set -o verbose
 set -o errexit
+
+eval `opam config env`
+opam install --yes core bisect_ppx
+pip3 install --user hashids
+clear
 
 # Debug, tests, coverage
 # ======================
 
-corebuild -no-links -use-ocamlfind -pkg oUnit -pkg bisect -syntax camlp4o -tag debug -cflags -w,@a-44,-strict-sequence unit_tests.byte
-cd _build
+corebuild -no-links -use-ocamlfind -package bisect_ppx -tag debug unit_tests.byte
+
 rm -f bisect????.out
-./unit_tests.byte -shards 1  # Only one shard because I don't know how to use bisect with multiple threads
-bisect-report -html coverage bisect0001.out
-bisect-report -text >(grep total | head -n 1) bisect0001.out
-echo "See test coverage in $(pwd)/coverage/index.html"
-cd ..
+_build/unit_tests.byte
+bisect-summary bisect????.out
+bisect-ppx-report -html _build/bisect bisect????.out
+echo "See coverage report (for General's unit tests) in $(pwd)/_build/bisect/index.html"
+rm -f bisect????.out
 
 # OPAM package
 # ============
 
-opam remove hashids || echo "Not yet installed. OK"
-opam pin --yes add hashids .
+opam pin add --yes --no-action .
+opam reinstall --yes hashids
+
+# Examples
+# ========
+
 cd examples
 # Library doesn't depend on oUnit: no need to link oUnit here. Keep it this way.
 corebuild -no-links -use-ocamlfind -package hashids example.byte example.native
@@ -31,11 +39,13 @@ cd ..
 # Documentation
 # =============
 
-rm -rf _build/doc
-if which sphinx-build
+if (which sphinxcontrib-ocaml-autodoc && which sphinx-build) >/dev/null
 then
-    sphinx-build doc _build/doc
-    echo "See documentation in $(pwd)/_build/doc/index.html"
+    echo
+    rm -rf docs _build/sphinx/doctrees
+    sphinx-build doc docs -d _build/sphinx/doctrees
+    rm -f docs/.buildinfo
+    echo "See documentation in $(pwd)/docs/index.html"
 fi
 
 echo

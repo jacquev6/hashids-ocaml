@@ -1,6 +1,6 @@
-(* Copyright 2016 Vincent Jacques <vincent@vincent-jacques.net> *)
+(* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
 
-open Core.Std
+open Core
 
 
 let shuffle x ~salt =
