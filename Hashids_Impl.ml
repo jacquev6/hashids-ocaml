@@ -1,5 +1,6 @@
 (* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
 
+open General.Abbr
 open Core
 
 
@@ -25,12 +26,12 @@ let shuffle x ~salt =
   loop 0 x_last;
   x
 
-module MakeShuffleTest(OUnit2: module type of OUnit2) = struct
-  open OUnit2
+module ShuffleTests = struct
+  open Tst
 
-  let test = "shuffle" >::: (
+  let test = "shuffle" >:: (
     let test salt x expected =
-      (Printf.sprintf "salt:%S x:%S -> %S" salt x expected) >:: (fun _ -> x |> shuffle ~salt |> assert_equal ~printer:(Printf.sprintf "%S") expected)
+      ~: "salt:%S x:%S -> %S" salt x expected (lazy (check_string ~expected (shuffle ~salt x)))
     in [
       test "" "" "";
       test "" "abcdefghij" "abcdefghij";
@@ -73,23 +74,23 @@ let unhash hashed ~alphabet =
   )
   |> Tuple.T2.get1
 
-module MakeHashTest(OUnit2: module type of OUnit2) = struct
-  open OUnit2
+module HashTests = struct
+  open Tst
 
-  let test = "hash/unhash" >::: (
-    let test alphabet n hashed =
-      n |> hash ~alphabet |> assert_equal ~printer:ident hashed;
-      hashed |> unhash ~alphabet |> assert_equal ~printer:Int.to_string n;
+  let test = "hash/unhash" >:: (
+    let check alphabet n hashed =
+      check_string ~expected:hashed (hash ~alphabet n);
+      check_int ~expected:n (unhash ~alphabet hashed);
     in
-    let test n =
+    let make n =
       (* hash/unhash are just encoding/decoding of integer in some base when alphabet is 012...(base-1),
-      so we reuse the octal, decimal and hexadecimal conversions of the Printf module. *)
-      (Printf.sprintf "%i" n) >:: (fun _ ->
-        test "01234567" n (Printf.sprintf "%o" n);
-        test "0123456789" n (Printf.sprintf "%i" n);
-        test "0123456789abcdef" n (Printf.sprintf "%x" n);
-      )
-    in List.map ~f:test [0; 1; 2; 5; 7; 8; 9; 10; 11; 15; 16; 20; 31; 32; 39; 40; 63; 64]
+      so we reuse the octal, decimal and hexadecimal conversions of the Format module. *)
+      ~: "%i" n (lazy (
+        check "01234567" n (Frmt.apply "%o" n);
+        check "0123456789" n (Frmt.apply "%i" n);
+        check "0123456789abcdef" n (Frmt.apply "%x" n);
+      ))
+    in List.map ~f:make [0; 1; 2; 5; 7; 8; 9; 10; 11; 15; 16; 20; 31; 32; 39; 40; 63; 64]
   )
 end
 
@@ -140,34 +141,33 @@ let unbox ~guards =
       | _::hashid::_ | hashid::_ -> hashid
       | [] -> failwith "String.split_on_chars returned empty list" (*BISECT-IGNORE*)
 
-module MakeBoxTest(OUnit2: module type of OUnit2) = struct
-  open OUnit2
+module BoxTests = struct
+  open Tst
 
-  let test = "box/unbox" >::: (
-    let test min_length alphabet guards seed unboxed boxed =
-      let name = Printf.sprintf "%i %S %S %i %S -> %S" min_length alphabet guards seed unboxed boxed in
-      name >:: (fun _ ->
-        box ~min_length ~alphabet ~guards ~seed unboxed |> assert_equal ~printer:ident boxed;
-        unbox ~guards boxed |> assert_equal ~printer:ident unboxed;
-      )
+  let test = "box/unbox" >:: (
+    let make min_length alphabet guards seed unboxed boxed =
+      ~: "%i %S %S %i %S -> %S" min_length alphabet guards seed unboxed boxed (lazy (
+        check_string ~expected:boxed (box ~min_length ~alphabet ~guards ~seed unboxed);
+        check_string ~expected:unboxed (unbox ~guards boxed);
+      ))
     in [
-      test 0 "abcd" "hij" 42 "" "";
-      test 0 "abcd" "hij" 42 "vwxyz" "vwxyz";
-      test 2 "abcd" "hij" 42 "vwxyz" "vwxyz";
-      test 5 "abcd" "hij" 42 "vwxyz" "vwxyz";
-      test 6 "abcd" "hij" 40 "vwxyz" "jvwxyz";
-      test 6 "abcd" "hij" 41 "vwxyz" "hvwxyz";
-      test 6 "abcd" "hij" 42 "vwxyz" "ivwxyz";
-      test 7 "abcd" "hij" 40 "vwxyz" "jvwxyzh";
-      test 7 "abcd" "hij" 41 "vwxyz" "hvwxyzi";
-      test 7 "abcd" "hij" 42 "vwxyz" "ivwxyzj";
-      test 8 "abcd" "hij" 42 "vwxyz" "civwxyzj";
-      test 9 "abcd" "hij" 42 "vwxyz" "civwxyzjb";
-      test 10 "abcd" "hij" 42 "vwxyz" "acivwxyzjb";
-      test 11 "abcd" "hij" 42 "vwxyz" "acivwxyzjbd";
-      test 12 "abcd" "hij" 42 "vwxyz" "dacivwxyzjbd";
-      test 13 "abcd" "hij" 42 "vwxyz" "dacivwxyzjbda";
-      test 14 "abcd" "hij" 42 "vwxyz" "cdacivwxyzjbda";
+      make 0 "abcd" "hij" 42 "" "";
+      make 0 "abcd" "hij" 42 "vwxyz" "vwxyz";
+      make 2 "abcd" "hij" 42 "vwxyz" "vwxyz";
+      make 5 "abcd" "hij" 42 "vwxyz" "vwxyz";
+      make 6 "abcd" "hij" 40 "vwxyz" "jvwxyz";
+      make 6 "abcd" "hij" 41 "vwxyz" "hvwxyz";
+      make 6 "abcd" "hij" 42 "vwxyz" "ivwxyz";
+      make 7 "abcd" "hij" 40 "vwxyz" "jvwxyzh";
+      make 7 "abcd" "hij" 41 "vwxyz" "hvwxyzi";
+      make 7 "abcd" "hij" 42 "vwxyz" "ivwxyzj";
+      make 8 "abcd" "hij" 42 "vwxyz" "civwxyzj";
+      make 9 "abcd" "hij" 42 "vwxyz" "civwxyzjb";
+      make 10 "abcd" "hij" 42 "vwxyz" "acivwxyzjb";
+      make 11 "abcd" "hij" 42 "vwxyz" "acivwxyzjbd";
+      make 12 "abcd" "hij" 42 "vwxyz" "dacivwxyzjbd";
+      make 13 "abcd" "hij" 42 "vwxyz" "dacivwxyzjbda";
+      make 14 "abcd" "hij" 42 "vwxyz" "cdacivwxyzjbda";
     ]
   )
 end
@@ -221,37 +221,38 @@ let decode ~salt ~alphabet ~seps ~guards =
       |> Tuple.T2.get1
       |> List.rev
 
-module MakeEncodeTest(OUnit2: module type of OUnit2) = struct
-  open OUnit2
+module EncodeTests = struct
+  open Tst
 
-  let test = "encode/decode" >::: (
-    let test salt alphabet seps guards min_length xs hashid =
+  let test = "encode/decode" >:: (
+    let make salt alphabet seps guards min_length xs hashid =
       let encode = encode ~salt ~alphabet ~seps ~guards ~min_length
-      and decode = decode ~salt ~alphabet ~seps ~guards
-      and name = Printf.sprintf "%S %S %S %S %i -> %S" salt alphabet seps guards min_length hashid in
-      name >:: (fun _ ->
-        xs |> encode |> assert_equal ~printer:ident hashid;
-        hashid |> decode |> assert_equal ~printer:(List.to_string ~f:Int.to_string) xs;
-      )
+      and decode = decode ~salt ~alphabet ~seps ~guards in
+      ~: "%S %S %S %S %i -> %S" salt alphabet seps guards min_length hashid (lazy (
+        check_string ~expected:hashid (encode xs);
+        check_int_list ~expected:xs (decode hashid);
+      ))
     in [
-      "negative" >:: (fun _ ->
+      "negative" >: (lazy (
         let encode = encode ~salt:"salt" ~alphabet:"abcde" ~seps:"hijk" ~guards:"xyz" ~min_length:0 in
-        assert_raises (Invalid_argument "negative integer (Hashids can encode only positive integers)") (fun () -> encode [-1])
-      );
-      test "" "abcde" "hijk" "xyz" 0 [] "";
-      test "" "abcde" "hijk" "xyz" 4 [] "";
-      test "" "abcde" "hijk" "xyz" 0 [42] "cead";
-      test "" "abcde" "hijk" "xyz" 12 [42] "daebxceadzdc";
-      test "0123" "abcde" "hijk" "xyz" 0 [42] "cabd";
-      test "0123" "abcde" "hijk" "xyz" 12 [42] "eecdxcabdyab";
-      test "" "abcde" "hijk" "xyz" 0 [42; 57] "edeajebe";
-      test "" "abcde" "hijk" "xyz" 12 [42; 57] "aezedeajebey";
-      test "0123" "abcde" "hijk" "xyz" 0 [42; 57] "edabjdad";
-      test "0123" "abcde" "hijk" "xyz" 12 [42; 57] "cdzedabjdady";
-      test "" "abcde" "hijk" "xyz" 0 [42; 57; 72; 25] "becbjacaibebhecc";
-      test "" "abcde" "hijk" "xyz" 25 [42; 57; 72; 25] "bccadxbecbjacaibebheccxeb";
-      test "0123" "abcde" "hijk" "xyz" 0 [42; 57; 72; 25] "bcedjedeiacahaee";
-      test "0123" "abcde" "hijk" "xyz" 25 [42; 57; 72; 25] "beedbxbcedjedeiacahaeeyac";
+        expect_exception
+          ~expected:(Invalid_argument "negative integer (Hashids can encode only positive integers)")
+          (lazy (encode [-1]))
+      ));
+      make "" "abcde" "hijk" "xyz" 0 [] "";
+      make "" "abcde" "hijk" "xyz" 4 [] "";
+      make "" "abcde" "hijk" "xyz" 0 [42] "cead";
+      make "" "abcde" "hijk" "xyz" 12 [42] "daebxceadzdc";
+      make "0123" "abcde" "hijk" "xyz" 0 [42] "cabd";
+      make "0123" "abcde" "hijk" "xyz" 12 [42] "eecdxcabdyab";
+      make "" "abcde" "hijk" "xyz" 0 [42; 57] "edeajebe";
+      make "" "abcde" "hijk" "xyz" 12 [42; 57] "aezedeajebey";
+      make "0123" "abcde" "hijk" "xyz" 0 [42; 57] "edabjdad";
+      make "0123" "abcde" "hijk" "xyz" 12 [42; 57] "cdzedabjdady";
+      make "" "abcde" "hijk" "xyz" 0 [42; 57; 72; 25] "becbjacaibebhecc";
+      make "" "abcde" "hijk" "xyz" 25 [42; 57; 72; 25] "bccadxbecbjacaibebheccxeb";
+      make "0123" "abcde" "hijk" "xyz" 0 [42; 57; 72; 25] "bcedjedeiacahaee";
+      make "0123" "abcde" "hijk" "xyz" 25 [42; 57; 72; 25] "beedbxbcedjedeiacahaeeyac";
     ]
   )
 end
@@ -321,45 +322,50 @@ let preprocess =
     let alphabet = shuffle alphabet ~salt in
     make_guards alphabet seps
 
-module MakePreprocessTest(OUnit2: module type of OUnit2) = struct
-  open OUnit2
+module PreprocessTests = struct
+  open Tst
 
-  let test = "preprocess" >::: (
-    let test salt alphabet expected_alphabet expected_seps expected_guards =
-      let name = Printf.sprintf "%S %S -> %S %S %S" salt alphabet expected_alphabet expected_seps expected_guards in
-      name >:: (fun _ ->
+  let test = "preprocess" >:: (
+    let make salt alphabet expected_alphabet expected_seps expected_guards =
+      ~: "%S %S -> %S %S %S" salt alphabet expected_alphabet expected_seps expected_guards (lazy (
         let (alphabet, seps, guards) = preprocess ~salt ~alphabet in
-        assert_equal ~printer:ident expected_alphabet alphabet;
-        assert_equal ~printer:ident expected_seps seps;
-        assert_equal ~printer:ident expected_guards guards;
-      )
+        check_string ~expected:expected_alphabet alphabet;
+        check_string ~expected:expected_seps seps;
+        check_string ~expected:expected_guards guards;
+      ))
     in [
-      "too short" >:: (fun _ -> assert_raises (Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)") (fun () -> preprocess ~salt:"" ~alphabet:"0123456789abcde"));
-      "duplicate => too short" >:: (fun _ -> assert_raises (Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)") (fun () -> preprocess ~salt:"" ~alphabet:"0123456789abcdee"));
-      "space" >:: (fun _ -> assert_raises (Invalid_argument "alphabet contains space (Hashids cannot contains spaces)") (fun () -> preprocess ~salt:"" ~alphabet:"0123456789 abcdef"));
-      test "" "0123456789abcdef" "3456789abde" "cf01" "2";
-      test "" "0123456789abcdef0123456789abcdef" "3456789abde" "cf01" "2";
-      test "salt" "0123456789abcdef" "8e7ab43592d" "fc01" "6";
-      test "other salt" "0123456789abcdef" "93aed582764" "fc01" "b";
-      "alphabet without standard separators" >::: (let alphabet = "abdegjklmnopqrvwxyzABDEGJKLMNOPQRVWXYZ1234567890" in [
-        test "" alphabet "yzABDEGJKLMNOPQRVWXYZ1234567890" "abdegjklmnopqr" "vwx";
-        test "salt" alphabet "zJWKwLQM7PX3Z120G6AVNB8yxR5O4Y9" "abdegjklmnopqr" "EvD";
-        test "other salt" alphabet "VLXDvO2YMEw985RGB6xPQKNJz473y01" "abdegjklmnopqr" "ZAW";
+      "too short" >: (lazy (expect_exception
+        ~expected:(Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)")
+        (lazy (preprocess ~salt:"" ~alphabet:"0123456789abcde"))));
+      "duplicate => too short" >: (lazy (expect_exception
+        ~expected:(Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)")
+        (lazy (preprocess ~salt:"" ~alphabet:"0123456789abcdee"))));
+      "space" >: (lazy (expect_exception
+        ~expected:(Invalid_argument "alphabet contains space (Hashids cannot contains spaces)")
+        (lazy (preprocess ~salt:"" ~alphabet:"0123456789 abcdef"))));
+      make "" "0123456789abcdef" "3456789abde" "cf01" "2";
+      make "" "0123456789abcdef0123456789abcdef" "3456789abde" "cf01" "2";
+      make "salt" "0123456789abcdef" "8e7ab43592d" "fc01" "6";
+      make "other salt" "0123456789abcdef" "93aed582764" "fc01" "b";
+      "alphabet without standard separators" >:: (let alphabet = "abdegjklmnopqrvwxyzABDEGJKLMNOPQRVWXYZ1234567890" in [
+        make "" alphabet "yzABDEGJKLMNOPQRVWXYZ1234567890" "abdegjklmnopqr" "vwx";
+        make "salt" alphabet "zJWKwLQM7PX3Z120G6AVNB8yxR5O4Y9" "abdegjklmnopqr" "EvD";
+        make "other salt" alphabet "VLXDvO2YMEw985RGB6xPQKNJz473y01" "abdegjklmnopqr" "ZAW";
       ]);
-      "alphabet with one standard separator" >::: (let alphabet = "abcdegjklmnopqrvwxyzABDEGJKLMNOPQRVWXYZ1234567890" in [
-        test "" alphabet "xyzABDEGJKLMNOPQRVWXYZ1234567890" "cabdegjklmnopq" "rvw";
-        test "salt" alphabet "EzOJr73X9Z1wyP8K5QYVv6BGR0WA4ML2" "cabdegjklmnopq" "xND";
-        test "other salt" alphabet "O7N23RL4Yz5VDZ6G10P8vK9rxwAyEWMQ" "cabdegjklmnopq" "BXJ";
+      "alphabet with one standard separator" >:: (let alphabet = "abcdegjklmnopqrvwxyzABDEGJKLMNOPQRVWXYZ1234567890" in [
+        make "" alphabet "xyzABDEGJKLMNOPQRVWXYZ1234567890" "cabdegjklmnopq" "rvw";
+        make "salt" alphabet "EzOJr73X9Z1wyP8K5QYVv6BGR0WA4ML2" "cabdegjklmnopq" "xND";
+        make "other salt" alphabet "O7N23RL4Yz5VDZ6G10P8vK9rxwAyEWMQ" "cabdegjklmnopq" "BXJ";
       ]);
-      "alphabet with almost only standard separators" >::: (let alphabet = "cfhistuCFHISTU01" in [
-        test "" alphabet "01" "fhistuCFHISTU" "c";
-        test "salt" alphabet "10" "iuUCFSThctfIH" "s";
-        test "other salt" alphabet "10" "StIischHCuTFf" "U";
+      "alphabet with almost only standard separators" >:: (let alphabet = "cfhistuCFHISTU01" in [
+        make "" alphabet "01" "fhistuCFHISTU" "c";
+        make "salt" alphabet "10" "iuUCFSThctfIH" "s";
+        make "other salt" alphabet "10" "StIischHCuTFf" "U";
       ]);
-      "alphabet with standard separators in reverse order" >::: (let alphabet = "!\"#%&',-/0123456789:;<=>ABCDEFGHIJKLMNOPQRSTUVWXYZ_`abcdefghijklmnopqrstuvwxyz~" in [
-        test "" alphabet "123456789:;<=>ABDEGJKLMNOPQRVWXYZ_`abdegjklmnopqrvwxyz~" "cfhistuCFHISTU!\"#%&" "',-/0";
-        test "salt" alphabet "Kj0<vLwZ'Ebo9kJe3V:Y~OaGPlMq6-7mdzxA,_`;n4WXNRy/>g2pQBr" "siuUCFSThctfIH!\"#%&" "D8=51";
-        test "other salt" alphabet "Q-n8NPoWdJX'1Yzg/B;52OZLy=aqwKk4G<MVr>E,9xb:7`~6AD0R_vj" "UStIischHCuTFf!\"#%&" "lpm3e";
+      "alphabet with standard separators in reverse order" >:: (let alphabet = "!\"#%&',-/0123456789:;<=>ABCDEFGHIJKLMNOPQRSTUVWXYZ_`abcdefghijklmnopqrstuvwxyz~" in [
+        make "" alphabet "123456789:;<=>ABDEGJKLMNOPQRVWXYZ_`abdegjklmnopqrvwxyz~" "cfhistuCFHISTU!\"#%&" "',-/0";
+        make "salt" alphabet "Kj0<vLwZ'Ebo9kJe3V:Y~OaGPlMq6-7mdzxA,_`;n4WXNRy/>g2pQBr" "siuUCFSThctfIH!\"#%&" "D8=51";
+        make "other salt" alphabet "Q-n8NPoWdJX'1Yzg/B;52OZLy=aqwKk4G<MVr>E,9xb:7`~6AD0R_vj" "UStIischHCuTFf!\"#%&" "lpm3e";
       ]);
     ]
   )
@@ -379,14 +385,14 @@ let make ?(salt="") ?(min_length=0) ?(alphabet="abcdefghijklmnopqrstuvwxyzABCDEF
   {encode; decode}
 
 
-module MakeTest(OUnit2: module type of OUnit2) = struct
-  open OUnit2
+module Tests = struct
+  open Tst
 
-  let test = "Hashids_Impl" >::: [
-    (let module Test = MakeShuffleTest(OUnit2) in Test.test);
-    (let module Test = MakeHashTest(OUnit2) in Test.test);
-    (let module Test = MakeBoxTest(OUnit2) in Test.test);
-    (let module Test = MakeEncodeTest(OUnit2) in Test.test);
-    (let module Test = MakePreprocessTest(OUnit2) in Test.test);
+  let test = "Hashids_Impl" >:: [
+    ShuffleTests.test;
+    HashTests.test;
+    BoxTests.test;
+    EncodeTests.test;
+    PreprocessTests.test;
   ]
 end

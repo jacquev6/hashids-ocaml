@@ -1,29 +1,30 @@
 (* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
 
-open Core
-open OUnit2
+open General.Abbr
+open Tst
 
 
-let test = "Hashids" >::: [
-  (let module Test = Hashids_Impl.MakeTest(OUnit2) in Test.test);
-  "public interface" >::: [
-    "alphabet too short" >:: (fun _ -> assert_raises
-      (Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)")
-      (fun () -> Hashids.make ~alphabet:"abcdefghijklmno" ())
-    );
-    "negative" >:: (fun _ ->
+let test = "Hashids" >:: [
+  Hashids_Impl.Tests.test;
+  "public interface" >:: [
+    "alphabet too short" >: (lazy (expect_exception
+      ~expected:(Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)")
+      (lazy (Hashids.make ~alphabet:"abcdefghijklmno" ()))
+    ));
+    "negative" >: (
       let {Hashids.encode; _} = Hashids.make () in
-      assert_raises
-      (Invalid_argument "negative integer (Hashids can encode only positive integers)")
-      (fun () -> encode [-1])
+      lazy (expect_exception
+        ~expected:(Invalid_argument "negative integer (Hashids can encode only positive integers)")
+        (lazy (encode [-1]))
+      )
     );
-    "encode/decode" >::: (
+    "encode/decode" >:: (
       let success name ?salt ?min_length ?alphabet xs encoded =
         let {Hashids.encode; decode} = Hashids.make ?salt ?min_length ?alphabet () in
-        (name ^ ": " ^ encoded) >:: (fun _ ->
-          xs |> encode |> assert_equal ~printer:ident encoded;
-          encoded |> decode |> assert_equal ~printer:(List.to_string ~f:Int.to_string) xs;
-        )
+        ~: "%s: %s" name encoded (lazy (
+          check_string ~expected:encoded (encode xs);
+          check_int_list ~expected:xs (decode encoded);
+        ))
       in [
         success "empty" [] "";
         success "default" [0] "gY";
@@ -80,4 +81,6 @@ let test = "Hashids" >::: [
   ];
 ]
 
-let () = run_test_tt_main test
+let () =
+  let argv = Li.of_array OCamlStandard.Sys.argv in
+  Exit.exit (command_line_main ~argv test)

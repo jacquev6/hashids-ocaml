@@ -14,7 +14,7 @@ install:
   - opam switch --yes $OCAML_VERSION
   - eval `opam config env`
   - opam switch
-  - opam install --yes ounit core
+  - opam install --yes General core
   - opam upgrade --yes
   - opam list
 script:

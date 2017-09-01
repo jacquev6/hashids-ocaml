@@ -5,7 +5,7 @@
 set -o errexit
 
 eval `opam config env`
-opam install --yes core bisect_ppx
+opam install --yes General bisect_ppx
 clear
 
 # Debug, tests, coverage
@@ -14,8 +14,11 @@ clear
 corebuild -no-links -use-ocamlfind -package bisect_ppx -tag debug unit_tests.byte
 
 rm -f bisect????.out
+echo
 _build/unit_tests.byte
+echo
 bisect-summary bisect????.out
+echo
 bisect-ppx-report -html _build/bisect bisect????.out
 echo "See coverage report (for General's unit tests) in $(pwd)/_build/bisect/index.html"
 rm -f bisect????.out
@@ -23,6 +26,7 @@ rm -f bisect????.out
 # OPAM package
 # ============
 
+echo
 opam pin add --yes --no-action .
 opam reinstall --yes hashids
 
@@ -30,7 +34,6 @@ opam reinstall --yes hashids
 # ========
 
 cd examples
-# Library doesn't depend on oUnit: no need to link oUnit here. Keep it this way.
 corebuild -no-links -use-ocamlfind -package hashids example.byte example.native
 diff <(_build/example.native) <(echo "Jys1FWfnhqHy")
 cd ..
