@@ -6,7 +6,6 @@ set -o errexit
 
 eval `opam config env`
 opam install --yes core bisect_ppx
-pip3 install --user hashids
 clear
 
 # Debug, tests, coverage

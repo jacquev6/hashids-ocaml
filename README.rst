@@ -3,7 +3,7 @@ It generates short, unique, non-sequential ids from numbers, that you can also d
 It is compatible with version 1.0.0 of hashids.
 
 It's licensed under the `MIT license <http://choosealicense.com/licenses/mit/>`__.
-It's available on `OPAM <@todo>`__,
+It's available on `OPAM <https://opam.ocaml.org/packages/hashids>`__,
 its `documentation <http://jacquev6.github.io/hashids-ocaml>`__
 and its `source code <https://github.com/jacquev6/hashids-ocaml>`__ are on GitHub.
 

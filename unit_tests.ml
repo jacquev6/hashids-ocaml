@@ -9,7 +9,7 @@ let test = "Hashids" >::: [
   "public interface" >::: [
     "alphabet too short" >:: (fun _ -> assert_raises
       (Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)")
-      (fun () -> Hashids.make ~alphabet:"abcd" ())
+      (fun () -> Hashids.make ~alphabet:"abcdefghijklmno" ())
     );
     "negative" >:: (fun _ ->
       let {Hashids.encode; _} = Hashids.make () in

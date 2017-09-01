@@ -21,7 +21,6 @@ script:
   - corebuild -use-ocamlfind unit_tests.byte
   - _build/unit_tests.byte
 env:
-  - OCAML_VERSION=4.01.0
   - OCAML_VERSION=4.05.0
 cache:
   directories:
