@@ -1,3 +1,5 @@
+(* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
+
 let config = Hashids.make ()
 
 let () =
