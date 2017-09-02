@@ -18,7 +18,7 @@ install: [
         "cp"
         "META"
         "_build/Hashids.cmi" "_build/Hashids.cma" "_build/Hashids.a"
-        "_build/Hashids.cmx" "_build/Hashids_Impl.cmx" "_build/Hashids.cmxa"
+        "_build/Hashids.cmx" "_build/Hashids.cmxa"
         "%{prefix}%/lib/hashids"
     ]
 ]

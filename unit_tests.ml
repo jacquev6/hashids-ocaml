@@ -5,7 +5,7 @@ open Tst
 
 
 let test = "Hashids" >:: [
-  Hashids_Impl.Tests.test;
+  Hashids.Tests.test;
   "public interface" >:: [
     "alphabet too short" >: (lazy (expect_exception
       ~expected:(Invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)")

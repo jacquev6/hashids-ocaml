@@ -31,3 +31,4 @@ html_theme_options = {
 extensions.append("sphinxcontrib.ocaml")
 primary_domain = "ocaml"
 ocaml_source_directories = ["."]
+ocaml_findlib_packages = ["General"]

@@ -15,3 +15,7 @@ val make: ?salt:string -> ?min_length:int -> ?alphabet:string -> unit -> t
 val encode: t -> int list -> string
 
 val decode: t -> string -> int list
+
+module Tests: sig
+  val test: General.Testing.Test.t
+end [@@autodoc.hide]
