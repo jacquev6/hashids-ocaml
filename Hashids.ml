@@ -1,22 +1,34 @@
 (* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
 
 open General.Abbr
+open IntRef.O
 
 
 let shuffle x ~salt =
   if x = "" || salt = "" then x else
-  let salt = salt |> Str.to_list |> Li.map ~f:Ch.to_int |> Li.to_array in
+  let salt =
+    salt
+    |> Str.to_list
+    |> Li.map ~f:Ch.to_int
+    |> Li.to_array
+  in
   (* Shuffling is based on swapping characters so we need a copy.
   Maybe we could find an implementation where each char can ben computed
   functionally and avoid mutations? *)
   let x = By.of_string x in
-  let swap i j = let xi = By.get x i and xj = By.get x j in By.set x j xi; By.set x i xj
-  and x_last = By.size x - 1
-  and salt_lenght = Ar.size salt
+  let swap i j =
+    let xi = By.get x i
+    and xj = By.get x j
+    in begin
+      x.[j] <- xi;
+      x.[i] <- xj
+    end
+  and last = By.size x - 1
+  and salt_size = Ar.size salt
   and p = ref 0 in
-  for i = x_last downto 1 do
-    let v = (x_last - i) mod salt_lenght in
-    p := !p + salt.(v);
+  for i = last downto 1 do
+    let v = (last - i) mod salt_size in
+    p =+ salt.(v);
     swap i ((salt.(v) + v + !p) mod i)
   done;
   By.to_string x
@@ -25,18 +37,18 @@ module ShuffleTests = struct
   open Tst
 
   let test = "shuffle" >:: (
-    let test salt x expected =
+    let make salt x expected =
       ~: "salt:%S x:%S -> %S" salt x expected (lazy (check_string ~expected (shuffle ~salt x)))
     in [
-      test "" "" "";
-      test "" "abcdefghij" "abcdefghij";
-      test "xyz" "" "";
-      test "xyz" "a" "a";
-      test "x" "abcdefghij" "bcdhfjieag";
-      test "y" "abcdefghij" "eagcjhfbdi";
-      test "xx" "abcdefghij" "cdhfjaiebg";
-      test "yy" "abcdefghij" "fdjcghabei";
-      test "xyz" "abcdefghij" "hjfacbiedg";
+      make "" "" "";
+      make "" "abcdefghij" "abcdefghij";
+      make "xyz" "" "";
+      make "xyz" "a" "a";
+      make "x" "abcdefghij" "bcdhfjieag";
+      make "y" "abcdefghij" "eagcjhfbdi";
+      make "xx" "abcdefghij" "cdhfjaiebg";
+      make "yy" "abcdefghij" "fdjcghabei";
+      make "xyz" "abcdefghij" "hjfacbiedg";
     ]
   )
 end
@@ -46,12 +58,16 @@ let hash n ~alphabet =
   let base = Str.size alphabet in
   let current n = alphabet.[n mod base]
   and next n = n / base in
-  let rec loop ret = function 0 -> ret | n -> step ret n
-  and step ret n = loop ((current n)::ret) (next n) in
+  let rec loop ret = function
+    | 0 -> ret
+    | n -> step ret n
+  and step ret n =
+    loop ((current n)::ret) (next n)
+  in
   step [] n
   |> Str.of_list
 
-let unhash hashed ~alphabet =
+let unhash s ~alphabet =
   let base = Str.size alphabet
   and digits =
     alphabet
@@ -59,15 +75,14 @@ let unhash hashed ~alphabet =
     |> Li.map_i ~f:(fun ~i c -> (c, i))
     |> ChSoMap.of_list_last
   in
-  hashed
+  s
   |> Str.to_list
   |> Li.reverse
-  |> Li.fold ~init:(0, 1) ~f:(fun (value, mult) k ->
+  |> Li.fold_acc ~acc:1 ~init:0 ~f:(fun ~acc:mult value k ->
     let value = value + mult * ChSoMap.get digits ~k
     and mult = base * mult in
-    (value, mult)
+    (mult, value)
   )
-  |> Tu2.get_0
 
 module HashTests = struct
   open Tst
@@ -91,25 +106,29 @@ end
 
 
 let box ~min_length ~alphabet ~guards ~seed =
-  let guards_length = Str.size guards in
+  let guards_size = Str.size guards in
   let enough hashid =
     Str.size hashid >= min_length
   and guard hashid index =
-    let index = (seed + Ch.to_int hashid.[index]) mod guards_length in
+    let index = (seed + Ch.to_int hashid.[index]) mod guards_size in
     Str.of_char guards.[index]
   in
+  (* @todo Can we avoid many string concatenations? We're often adding a single char *)
   let guard_front hashid = guard hashid 0 ^ hashid
   and guard_back hashid = hashid ^ guard hashid 2
   and pad =
     let half = Str.size alphabet / 2 in
     let rec loop alphabet hashid =
       let alphabet = shuffle ~salt:alphabet alphabet in
-      let hashid = (Str.drop_prefix' alphabet ~len:half) ^ hashid ^ (Str.prefix alphabet ~len:half) in
+      let hashid =
+        (Str.drop_prefix' alphabet ~len:half) ^ hashid ^ (Str.prefix alphabet ~len:half)
+      in
       if enough hashid then
         hashid
       else
         loop alphabet hashid
-    in loop alphabet
+    in
+    loop alphabet
   and trim hashid =
     let excess = Str.size hashid - min_length in
     if excess > 0 then
@@ -169,7 +188,7 @@ end
 
 
 let encode ~salt ~alphabet ~seps ~guards ~min_length =
-  let alphabet_length = Str.size alphabet in
+  let alphabet_size = Str.size alphabet in
   function
     | [] -> ""
     | xs ->
@@ -177,11 +196,11 @@ let encode ~salt ~alphabet ~seps ~guards ~min_length =
         if x < 0 then Exn.invalid_argument "negative integer (Hashids can encode only positive integers)";
         seed + x mod (i + 100)) xs
       in
-      let lottery = Str.of_char alphabet.[seed mod alphabet_length] in
+      let lottery = Str.of_char alphabet.[seed mod alphabet_size] in
       let (hashid, alphabet) =
         xs
         |> Li.fold_i ~init:(lottery, alphabet) ~f:(fun ~i (hashid, alphabet) x ->
-          let salt = Str.prefix (lottery ^ salt ^ alphabet) ~len:alphabet_length in
+          let salt = Str.prefix (lottery ^ salt ^ alphabet) ~len:alphabet_size in
           let alphabet = shuffle ~salt alphabet in
           let hashed = hash x ~alphabet in
           let sep = seps.[x mod (Ch.to_int hashed.[0] + i) mod (Str.size seps)] in
@@ -194,7 +213,7 @@ let encode ~salt ~alphabet ~seps ~guards ~min_length =
 
 let decode ~salt ~alphabet ~seps ~guards =
   let seps = Str.to_list seps
-  and alphabet_length = Str.size alphabet
+  and alphabet_size = Str.size alphabet
   and cut s ~i = (Str.prefix s ~len:i, Str.drop_prefix' s ~len:i) in
   function
     | "" -> []
@@ -206,14 +225,13 @@ let decode ~salt ~alphabet ~seps ~guards =
       in
       hashid
       |> Str.split' ~seps
-      |> Li.fold ~init:([], alphabet) ~f:(fun (xs, alphabet) hashed ->
-        let salt = Str.prefix (lottery ^ salt ^ alphabet) ~len:alphabet_length in
+      |> Li.fold_acc ~acc:alphabet ~init:[] ~f:(fun ~acc:alphabet xs hashed ->
+        let salt = Str.prefix (lottery ^ salt ^ alphabet) ~len:alphabet_size in
         let alphabet = shuffle ~salt alphabet in
         let x = unhash hashed ~alphabet in
         let xs = x::xs in
-        (xs, alphabet)
+        (alphabet, xs)
       )
-      |> Tu2.get_0
       |> Li.reverse
 
 module EncodeTests = struct
@@ -300,14 +318,14 @@ let preprocess =
     else
       (alphabet, seps)
   and make_guards alphabet seps =
-    let guards_length = length_of_ratio ~alphabet 12. in
+    let guards_size = length_of_ratio ~alphabet 12. in
     if Str.size alphabet < 3 then
-      let guards = Str.prefix seps ~len:guards_length
-      and seps = Str.drop_prefix' seps ~len:guards_length
+      let guards = Str.prefix seps ~len:guards_size
+      and seps = Str.drop_prefix' seps ~len:guards_size
       in (alphabet, seps, guards)
     else
-      let guards = Str.prefix alphabet ~len:guards_length
-      and alphabet = Str.drop_prefix' alphabet ~len:guards_length
+      let guards = Str.prefix alphabet ~len:guards_size
+      and alphabet = Str.drop_prefix' alphabet ~len:guards_size
       in (alphabet, seps, guards)
   in
   fun ~salt ~alphabet ->
