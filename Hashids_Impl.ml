@@ -368,16 +368,23 @@ end
 
 
 type t = {
-  encode: int list -> string;
-  decode: string -> int list;
+  salt: string;
+  alphabet: string;
+  seps: string;
+  min_length: int;
+  guards: string;
 }
 
 let make ?(salt="") ?(min_length=0) ?(alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") () =
   let min_length = Int.max 0 min_length
   and (alphabet, seps, guards) = preprocess ~salt ~alphabet in
-  let encode = encode ~salt ~alphabet ~seps ~min_length ~guards
-  and decode = decode ~salt ~alphabet ~seps ~guards in
-  {encode; decode}
+  {salt; alphabet; seps; min_length; guards}
+
+let encode {salt; alphabet; seps; min_length; guards} xs =
+  encode ~salt ~alphabet ~seps ~guards ~min_length xs
+
+let decode {salt; alphabet; seps; min_length=_; guards} xs =
+  decode ~salt ~alphabet ~seps ~guards xs
 
 
 module Tests = struct

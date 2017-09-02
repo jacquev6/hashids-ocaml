@@ -40,7 +40,7 @@
             
   <div class="section" id="hashids-ocaml">
 <h1>hashids-ocaml<a class="headerlink" href="#hashids-ocaml" title="Permalink to this headline">¶</a></h1>
-<p>hashids-ocaml is an OCaml (4.01+) implementation of <a class="reference external" href="http://hashids.org/">hashids</a>.
+<p><em>hashids-ocaml</em> is an OCaml (4.02.3+) implementation of <a class="reference external" href="http://hashids.org/">hashids</a>.
 It generates short, unique, non-sequential ids from numbers, that you can also decode.
 It is compatible with version 1.0.0 of hashids.</p>
 <p>It’s licensed under the <a class="reference external" href="http://choosealicense.com/licenses/mit/">MIT license</a>.
@@ -62,23 +62,18 @@ and its <a class="reference external" href="https://github.com/jacquev6/hashids-
 <div class="highlight-none"><div class="highlight"><pre><span></span>$ utop -require hashids
 </pre></div>
 </div>
-<p>Open:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>utop # open Hashids;;
-</pre></div>
-</div>
-<p>Create an encoder/decoder:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>utop # let {encode; decode} = make ();;
-val encode : int list -&gt; string = &lt;fun&gt;
-val decode : string -&gt; int list = &lt;fun&gt;
+<p>Create a config:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>utop # let config = Hashids.make ();;
+val config : Hashids.t = &lt;abstr&gt;
 </pre></div>
 </div>
 <p>Encode some integers:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>utop # encode [42; 57];;
+<div class="highlight-none"><div class="highlight"><pre><span></span>utop # Hashids.encode config [42; 57];;
 - : string = &quot;wYcGX&quot;
 </pre></div>
 </div>
 <p>And decode them:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>utop # decode &quot;wYcGX&quot;;;
+<div class="highlight-none"><div class="highlight"><pre><span></span>utop # Hashids.decode config &quot;wYcGX&quot;;;
 - : int list = [42; 57]
 </pre></div>
 </div>
@@ -90,9 +85,8 @@ val decode : string -&gt; int list = &lt;fun&gt;
 <em class="property">module </em><code class="descname">Hashids</code><em class="property"> : sig</em><a class="headerlink" href="#mod Hashids" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="type">
 <dt id="typ Hashids.t">
-<em class="property">type </em><code class="descname">t</code><em class="property"> = {encode: int list -&gt; string; decode: string -&gt; int list}</em><a class="headerlink" href="#typ Hashids.t" title="Permalink to this definition">¶</a></dt>
-<dd><p>The type returned by <a class="reference internal" href="#val Hashids.make"><code class="xref ocaml ocaml-val docutils literal"><span class="pre">make</span></code></a>, containing an encoding and a decoding function.</p>
-</dd></dl>
+<em class="property">type </em><code class="descname">t</code><a class="headerlink" href="#typ Hashids.t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="val">
 <dt id="val Hashids.make">
@@ -102,6 +96,16 @@ val decode : string -&gt; int list = &lt;fun&gt;
 Useful to hide their order of magnitude.</p>
 <p><code class="docutils literal"><span class="pre">alphabet</span></code>: the set of characters used to encode.</p>
 </dd></dl>
+
+<dl class="val">
+<dt id="val Hashids.encode">
+<em class="property">val </em><code class="descname">encode</code><em class="property">: t -&gt; int list -&gt; string</em><a class="headerlink" href="#val Hashids.encode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="val">
+<dt id="val Hashids.decode">
+<em class="property">val </em><code class="descname">decode</code><em class="property">: t -&gt; string -&gt; int list</em><a class="headerlink" href="#val Hashids.decode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd><dt>
 <em class="property">end</em></dt>

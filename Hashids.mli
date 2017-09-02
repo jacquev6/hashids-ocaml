@@ -1,10 +1,6 @@
 (* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
 
-(** The type returned by :val:`.make`, containing an encoding and a decoding function. *)
-type t = {
-  encode: int list -> string;
-  decode: string -> int list;
-}
+type t
 
 val make: ?salt:string -> ?min_length:int -> ?alphabet:string -> unit -> t
 (**
@@ -15,3 +11,7 @@ val make: ?salt:string -> ?min_length:int -> ?alphabet:string -> unit -> t
 
     ``alphabet``: the set of characters used to encode.
 *)
+
+val encode: t -> int list -> string
+
+val decode: t -> string -> int list

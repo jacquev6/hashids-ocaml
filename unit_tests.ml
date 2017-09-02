@@ -12,18 +12,18 @@ let test = "Hashids" >:: [
       (lazy (Hashids.make ~alphabet:"abcdefghijklmno" ()))
     ));
     "negative" >: (
-      let {Hashids.encode; _} = Hashids.make () in
+      let config = Hashids.make () in
       lazy (expect_exception
         ~expected:(Invalid_argument "negative integer (Hashids can encode only positive integers)")
-        (lazy (encode [-1]))
+        (lazy (Hashids.encode config [-1]))
       )
     );
     "encode/decode" >:: (
       let success name ?salt ?min_length ?alphabet xs encoded =
-        let {Hashids.encode; decode} = Hashids.make ?salt ?min_length ?alphabet () in
+        let config = Hashids.make ?salt ?min_length ?alphabet () in
         ~: "%s: %s" name encoded (lazy (
-          check_string ~expected:encoded (encode xs);
-          check_int_list ~expected:xs (decode encoded);
+          check_string ~expected:encoded (Hashids.encode config xs);
+          check_int_list ~expected:xs (Hashids.decode config encoded);
         ))
       in [
         success "empty" [] "";

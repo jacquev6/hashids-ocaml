@@ -1,4 +1,4 @@
-hashids-ocaml is an OCaml (4.02.3+) implementation of `hashids <http://hashids.org/>`__.
+*hashids-ocaml* is an OCaml (4.02.3+) implementation of `hashids <http://hashids.org/>`__.
 It generates short, unique, non-sequential ids from numbers, that you can also decode.
 It is compatible with version 1.0.0 of hashids.
 
@@ -38,22 +38,17 @@ Launch utop::
 
     $ utop -require hashids
 
-Open::
+Create a config::
 
-    utop # open Hashids;;
-
-Create an encoder/decoder::
-
-    utop # let {encode; decode} = make ();;
-    val encode : int list -> string = <fun>
-    val decode : string -> int list = <fun>
+    utop # let config = Hashids.make ();;
+    val config : Hashids.t = <abstr>
 
 Encode some integers::
 
-    utop # encode [42; 57];;
+    utop # Hashids.encode config [42; 57];;
     - : string = "wYcGX"
 
 And decode them::
 
-    utop # decode "wYcGX";;
+    utop # Hashids.decode config "wYcGX";;
     - : int list = [42; 57]
