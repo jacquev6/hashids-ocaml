@@ -1,6 +1,8 @@
-hashids-ocaml is an OCaml (4.01+) implementation of `hashids <http://hashids.org/>`__.
+hashids-ocaml is an OCaml (4.02.3+) implementation of `hashids <http://hashids.org/>`__.
 It generates short, unique, non-sequential ids from numbers, that you can also decode.
 It is compatible with version 1.0.0 of hashids.
+
+.. @todo Fix supported OCaml versions, here and in opam and .travis.yml files
 
 It's licensed under the `MIT license <http://choosealicense.com/licenses/mit/>`__.
 It's available on `OPAM <https://opam.ocaml.org/packages/hashids>`__,

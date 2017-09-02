@@ -11,7 +11,7 @@ clear
 # Debug, tests, coverage
 # ======================
 
-corebuild -no-links -use-ocamlfind -package bisect_ppx -tag debug unit_tests.byte
+ocamlbuild -no-links -use-ocamlfind -package bisect_ppx -tag debug unit_tests.byte
 
 rm -f bisect????.out
 echo
@@ -33,8 +33,10 @@ opam reinstall --yes hashids
 # Examples
 # ========
 
+# @todo Compare behavior with the Python and JavaScript implementations
+
 cd examples
-corebuild -no-links -use-ocamlfind -package hashids example.byte example.native
+ocamlbuild -no-links -use-ocamlfind -package hashids example.byte example.native
 diff <(_build/example.native) <(echo "Jys1FWfnhqHy")
 cd ..
 

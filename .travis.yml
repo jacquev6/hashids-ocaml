@@ -14,14 +14,17 @@ install:
   - opam switch --yes $OCAML_VERSION
   - eval `opam config env`
   - opam switch
-  - opam install --yes General core
+  - opam pin add --yes General --dev-repo
+  - opam install --yes General
   - opam upgrade --yes
   - opam list
 script:
-  - corebuild -use-ocamlfind unit_tests.byte
+  - ocamlbuild -use-ocamlfind unit_tests.byte
   - _build/unit_tests.byte
 env:
+  - OCAML_VERSION=4.02.3
   - OCAML_VERSION=4.05.0
+  - OCAML_VERSION=4.05.0+flambda
 cache:
   directories:
   - $HOME/.opam

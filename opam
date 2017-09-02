@@ -8,8 +8,9 @@ doc: "https://jacquev6.github.io/hashids-ocaml/"
 dev-repo: "https://github.com/jacquev6/hashids-ocaml.git"
 bug-reports: "http://github.com/jacquev6/hashids-ocaml/issues/"
 license: "MIT"
+available: [ocaml-version >= "4.02.3" & ocaml-version < "4.06.0"]
 build: [
-    ["corebuild" "Hashids.cma" "Hashids.cmxa"]
+    ["ocamlbuild" "-use-ocamlfind" "Hashids.cma" "Hashids.cmxa"]
 ]
 install: [
     ["mkdir" "-p" "%{prefix}%/lib/hashids"]
@@ -25,5 +26,5 @@ remove: ["ocamlfind" "remove" "hashids"]
 depends: [
     "ocamlbuild" {build}
     "ocamlfind" {build}
-    "General" {>= "0.2.0"}
+    "General" {>= "0.3.0"}
 ]

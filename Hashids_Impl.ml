@@ -1,30 +1,25 @@
 (* Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net> *)
 
 open General.Abbr
-open Core
 
 
 let shuffle x ~salt =
   if x = "" || salt = "" then x else
-  let salt = salt |> String.to_array |> Array.map ~f:Char.to_int in
+  let salt = salt |> Str.to_list |> Li.map ~f:Ch.to_int |> Li.to_array in
   (* Shuffling is based on swapping characters so we need a copy.
   Maybe we could find an implementation where each char can ben computed
   functionally and avoid mutations? *)
-  let x = String.copy x in
-  let swap i j = let xj = x.[j] in x.[j] <- x.[i]; x.[i] <- xj
-  and x_last = String.length x - 1
-  and salt_lenght = Array.length salt in
-  let rec loop p = function
-    | 0 -> ()
-    | i ->
-      let v = (x_last - i) mod salt_lenght in
-      let p = p + salt.(v) in
-      let j = (salt.(v) + v + p) mod i in
-      swap i j;
-      loop p (i - 1)
-  in
-  loop 0 x_last;
-  x
+  let x = By.of_string x in
+  let swap i j = let xi = By.get x i and xj = By.get x j in By.set x j xi; By.set x i xj
+  and x_last = By.size x - 1
+  and salt_lenght = Ar.size salt
+  and p = ref 0 in
+  for i = x_last downto 1 do
+    let v = (x_last - i) mod salt_lenght in
+    p := !p + salt.(v);
+    swap i ((salt.(v) + v + !p) mod i)
+  done;
+  By.to_string x
 
 module ShuffleTests = struct
   open Tst
@@ -48,31 +43,31 @@ end
 
 
 let hash n ~alphabet =
-  let base = String.length alphabet in
+  let base = Str.size alphabet in
   let current n = alphabet.[n mod base]
   and next n = n / base in
   let rec loop ret = function 0 -> ret | n -> step ret n
   and step ret n = loop ((current n)::ret) (next n) in
   step [] n
-  |> String.of_char_list
+  |> Str.of_list
 
 let unhash hashed ~alphabet =
-  let base = String.length alphabet
+  let base = Str.size alphabet
   and digits =
     alphabet
-    |> String.to_list
-    |> List.mapi ~f:(fun i c -> (c, i))
-    |> Char.Map.of_alist_exn
+    |> Str.to_list
+    |> Li.map_i ~f:(fun ~i c -> (c, i))
+    |> ChSoMap.of_list_last
   in
   hashed
-  |> String.to_list
-  |> List.rev
-  |> List.fold ~init:(0, 1) ~f:(fun (value, mult) c ->
-    let value = value + mult * Char.Map.find_exn digits c
+  |> Str.to_list
+  |> Li.reverse
+  |> Li.fold ~init:(0, 1) ~f:(fun (value, mult) k ->
+    let value = value + mult * ChSoMap.get digits ~k
     and mult = base * mult in
     (value, mult)
   )
-  |> Tuple.T2.get1
+  |> Tu2.get_0
 
 module HashTests = struct
   open Tst
@@ -90,36 +85,36 @@ module HashTests = struct
         check "0123456789" n (Frmt.apply "%i" n);
         check "0123456789abcdef" n (Frmt.apply "%x" n);
       ))
-    in List.map ~f:make [0; 1; 2; 5; 7; 8; 9; 10; 11; 15; 16; 20; 31; 32; 39; 40; 63; 64]
+    in Li.map ~f:make [0; 1; 2; 5; 7; 8; 9; 10; 11; 15; 16; 20; 31; 32; 39; 40; 63; 64]
   )
 end
 
 
 let box ~min_length ~alphabet ~guards ~seed =
-  let guards_length = String.length guards in
+  let guards_length = Str.size guards in
   let enough hashid =
-    String.length hashid >= min_length
+    Str.size hashid >= min_length
   and guard hashid index =
-    let index = (seed + Char.to_int hashid.[index]) mod guards_length in
-    String.of_char guards.[index]
+    let index = (seed + Ch.to_int hashid.[index]) mod guards_length in
+    Str.of_char guards.[index]
   in
   let guard_front hashid = guard hashid 0 ^ hashid
   and guard_back hashid = hashid ^ guard hashid 2
   and pad =
-    let half = String.length alphabet / 2 in
+    let half = Str.size alphabet / 2 in
     let rec loop alphabet hashid =
       let alphabet = shuffle ~salt:alphabet alphabet in
-      let hashid = (String.drop_prefix alphabet half) ^ hashid ^ (String.prefix alphabet half) in
+      let hashid = (Str.drop_prefix' alphabet ~len:half) ^ hashid ^ (Str.prefix alphabet ~len:half) in
       if enough hashid then
         hashid
       else
         loop alphabet hashid
     in loop alphabet
   and trim hashid =
-    let excess = String.length hashid - min_length in
+    let excess = Str.size hashid - min_length in
     if excess > 0 then
       let start_pos = excess / 2 in
-      String.slice hashid start_pos (start_pos + min_length)
+      Str.substring hashid ~pos:start_pos ~len:min_length
     else
       hashid
   and if_not_enough f hashid =
@@ -135,11 +130,11 @@ let box ~min_length ~alphabet ~guards ~seed =
     |> if_not_enough (fun hashid -> hashid |> pad |> trim)
 
 let unbox ~guards =
-  let guards = String.to_list guards in
+  let guards = Str.to_list guards in
   function hashid ->
-    match String.split_on_chars ~on:guards hashid with
+    match Str.split' ~seps:guards hashid with
       | _::hashid::_ | hashid::_ -> hashid
-      | [] -> failwith "String.split_on_chars returned empty list" (*BISECT-IGNORE*)
+      | [] -> Exn.failure "Str.split' returned empty list" (*BISECT-IGNORE*)
 
 module BoxTests = struct
   open Tst
@@ -174,33 +169,33 @@ end
 
 
 let encode ~salt ~alphabet ~seps ~guards ~min_length =
-  let alphabet_length = String.length alphabet in
+  let alphabet_length = Str.size alphabet in
   function
     | [] -> ""
     | xs ->
-      let seed = List.foldi ~init:0 ~f:(fun i seed x ->
-        if x < 0 then invalid_arg "negative integer (Hashids can encode only positive integers)";
+      let seed = Li.fold_i ~init:0 ~f:(fun ~i seed x ->
+        if x < 0 then Exn.invalid_argument "negative integer (Hashids can encode only positive integers)";
         seed + x mod (i + 100)) xs
       in
-      let lottery = String.of_char alphabet.[seed mod alphabet_length] in
+      let lottery = Str.of_char alphabet.[seed mod alphabet_length] in
       let (hashid, alphabet) =
         xs
-        |> List.foldi ~init:(lottery, alphabet) ~f:(fun i (hashid, alphabet) x ->
-          let salt = String.prefix (lottery ^ salt ^ alphabet) alphabet_length in
+        |> Li.fold_i ~init:(lottery, alphabet) ~f:(fun ~i (hashid, alphabet) x ->
+          let salt = Str.prefix (lottery ^ salt ^ alphabet) ~len:alphabet_length in
           let alphabet = shuffle ~salt alphabet in
           let hashed = hash x ~alphabet in
-          let sep = seps.[x mod (Char.to_int hashed.[0] + i) mod (String.length seps)] in
-          let hashid = hashid ^ hashed ^ (String.of_char sep) in
+          let sep = seps.[x mod (Ch.to_int hashed.[0] + i) mod (Str.size seps)] in
+          let hashid = hashid ^ hashed ^ (Str.of_char sep) in
           (hashid, alphabet)
         )
       in
-      String.drop_suffix hashid 1
+      Str.drop_suffix' hashid ~len:1
       |> box ~min_length ~alphabet ~guards ~seed
 
 let decode ~salt ~alphabet ~seps ~guards =
-  let seps = String.to_list seps
-  and alphabet_length = String.length alphabet
-  and cut s ~i = (String.prefix s i, String.drop_prefix s i) in
+  let seps = Str.to_list seps
+  and alphabet_length = Str.size alphabet
+  and cut s ~i = (Str.prefix s ~len:i, Str.drop_prefix' s ~len:i) in
   function
     | "" -> []
     | hashid ->
@@ -210,16 +205,16 @@ let decode ~salt ~alphabet ~seps ~guards =
         |> cut ~i:1
       in
       hashid
-      |> String.split_on_chars ~on:seps
-      |> List.fold ~init:([], alphabet) ~f:(fun (xs, alphabet) hashed ->
-        let salt = String.prefix (lottery ^ salt ^ alphabet) alphabet_length in
+      |> Str.split' ~seps
+      |> Li.fold ~init:([], alphabet) ~f:(fun (xs, alphabet) hashed ->
+        let salt = Str.prefix (lottery ^ salt ^ alphabet) ~len:alphabet_length in
         let alphabet = shuffle ~salt alphabet in
         let x = unhash hashed ~alphabet in
         let xs = x::xs in
         (xs, alphabet)
       )
-      |> Tuple.T2.get1
-      |> List.rev
+      |> Tu2.get_0
+      |> Li.reverse
 
 module EncodeTests = struct
   open Tst
@@ -261,7 +256,7 @@ end
 let preprocess =
   let all_seps = "cfhistuCFHISTU"
   and length_of_ratio ratio ~alphabet =
-    Int.of_float (Float.round_up (Float.of_int (String.length alphabet) /. ratio))
+    Int.of_float (Fl.ceil (Fl.of_int (Str.size alphabet) /. ratio))
   in
   let split_seps alphabet =
     (* Multiple responsibility (Hum, it's weird but still feels appropriate to do it in one single loop):
@@ -270,49 +265,49 @@ let preprocess =
       - keep each char only once
       - detect if not enough chars *)
     let (alphabet, seen_seps, seen) =
-      let all_seps = all_seps |> String.to_list |> Char.Set.of_list in
-      String.fold alphabet ~init:([], Char.Set.empty, Char.Set.empty) ~f:(fun (alphabet, seps, seen) c ->
-        if c = ' ' then invalid_arg "alphabet contains space (Hashids cannot contains spaces)";
-        if Char.Set.mem seen c then (alphabet, seps, seen) else
-        let seen = Char.Set.add seen c in
-        if Char.Set.mem all_seps c then
-          (alphabet, Char.Set.add seps c, seen)
+      let all_seps = all_seps |> Str.to_list |> ChSoSet.of_list in
+      Str.fold alphabet ~init:([], ChSoSet.empty, ChSoSet.empty) ~f:(fun (alphabet, seps, seen) v ->
+        if v = ' ' then Exn.invalid_argument "alphabet contains space (Hashids cannot contains spaces)";
+        if ChSoSet.contains seen ~v then (alphabet, seps, seen) else
+        let seen = ChSoSet.replace seen ~v in
+        if ChSoSet.contains all_seps ~v then
+          (alphabet, ChSoSet.replace seps ~v, seen)
         else
-          (c::alphabet, seps, seen)
+          (v::alphabet, seps, seen)
       )
     in
-    if Set.length seen < 16 then
-      invalid_arg "alphabet too short (Hashids requires at least 16 distinct characters)"
+    if ChSoSet.size seen < 16 then
+      Exn.invalid_argument "alphabet too short (Hashids requires at least 16 distinct characters)"
     else
       let alphabet =
         alphabet
-        |> List.rev
-        |> String.of_char_list
-      and seps = String.filter all_seps ~f:(Char.Set.mem seen_seps) in
+        |> Li.reverse
+        |> Str.of_list
+      and seps = Str.filter all_seps ~f:(fun v -> ChSoSet.contains seen_seps ~v) in
       (alphabet, seps)
   and complete_seps alphabet seps =
     let seps_min_length = length_of_ratio ~alphabet 3.5
-    and seps_length = String.length seps in
+    and seps_length = Str.size seps in
     if seps_length < seps_min_length then
       (* In the Python and Java implementations, they ensure that seps_min_length >= 2
       but to have seps_min_length = 1, we need length alphabet <= 3 and since we've
       already checked that length alphabet + length seps >= 16, then we must have
       length seps >= 13 and it's impossible to be in this branch where length seps < 1. *)
       let diff = seps_min_length - seps_length in
-      let seps = seps ^ (String.prefix alphabet diff)
-      and alphabet = String.drop_prefix alphabet diff in
+      let seps = seps ^ (Str.prefix alphabet ~len:diff)
+      and alphabet = Str.drop_prefix' alphabet ~len:diff in
       (alphabet, seps)
     else
       (alphabet, seps)
   and make_guards alphabet seps =
     let guards_length = length_of_ratio ~alphabet 12. in
-    if String.length alphabet < 3 then
-      let guards = String.prefix seps guards_length
-      and seps = String.drop_prefix seps guards_length
+    if Str.size alphabet < 3 then
+      let guards = Str.prefix seps ~len:guards_length
+      and seps = Str.drop_prefix' seps ~len:guards_length
       in (alphabet, seps, guards)
     else
-      let guards = String.prefix alphabet guards_length
-      and alphabet = String.drop_prefix alphabet guards_length
+      let guards = Str.prefix alphabet ~len:guards_length
+      and alphabet = Str.drop_prefix' alphabet ~len:guards_length
       in (alphabet, seps, guards)
   in
   fun ~salt ~alphabet ->

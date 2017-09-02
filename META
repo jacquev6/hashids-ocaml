@@ -1,5 +1,5 @@
 description="hashids"
-requires="core, General"
+requires="General"
 version="1.0.0"
 
 archive(byte)="Hashids.cma"
