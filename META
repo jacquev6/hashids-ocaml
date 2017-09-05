@@ -1,6 +1,0 @@
-description="hashids"
-requires="General"
-version="1.0.0"
-
-archive(byte)="Hashids.cma"
-archive(native)="Hashids.cmxa"

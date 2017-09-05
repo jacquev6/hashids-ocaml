@@ -1,5 +1,4 @@
 opam-version: "1.2"
-name: "hashids"
 version: "1.0.0"
 maintainer: "Vincent Jacques <vincent@vincent-jacques.net>"
 authors: "Vincent Jacques <vincent@vincent-jacques.net>"
@@ -10,21 +9,14 @@ bug-reports: "http://github.com/jacquev6/hashids-ocaml/issues/"
 license: "MIT"
 available: [ocaml-version >= "4.02.3" & ocaml-version < "4.06.0"]
 build: [
-    ["ocamlbuild" "-use-ocamlfind" "Hashids.cma" "Hashids.cmxa"]
+  ["jbuilder" "build" "-p" name "-j" jobs]
 ]
-install: [
-    ["mkdir" "-p" "%{prefix}%/lib/hashids"]
-    [
-        "cp"
-        "META"
-        "_build/Hashids.cmi" "_build/Hashids.cma" "_build/Hashids.a"
-        "_build/Hashids.cmx" "_build/Hashids.cmxa"
-        "%{prefix}%/lib/hashids"
-    ]
+
+build-test: [
+  ["jbuilder" "runtest" "-p" name]
 ]
-remove: ["ocamlfind" "remove" "hashids"]
+
 depends: [
-    "ocamlbuild" {build}
-    "ocamlfind" {build}
+    "jbuilder" {build}
     "General" {>= "0.3.0"}
 ]

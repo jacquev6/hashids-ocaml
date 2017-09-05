@@ -15,12 +15,11 @@ install:
   - eval `opam config env`
   - opam switch
   - opam pin add --yes General --dev-repo
-  - opam install --yes General
+  - opam install --yes General jbuilder
   - opam upgrade --yes
   - opam list
 script:
-  - ocamlbuild -use-ocamlfind unit_tests.byte
-  - _build/unit_tests.byte
+  - jbuilder runtest
 env:
   - OCAML_VERSION=4.02.3
   - OCAML_VERSION=4.05.0

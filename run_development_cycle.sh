@@ -11,17 +11,16 @@ clear
 # Debug, tests, coverage
 # ======================
 
-ocamlbuild -no-links -use-ocamlfind -package bisect_ppx -tag debug unit_tests.byte
-
-rm -f bisect????.out
+# https://github.com/aantron/bisect_ppx/blob/master/doc/advanced.md#Jbuilder suggests
+# modifying the jbuild file for release. Let's modify it for tests instead.
+sed -i "s/^;\(.*bisect_ppx.*\)$/\1/" jbuild
+jbuilder runtest --dev
+sed -i "s/^\(.*bisect_ppx.*\)$/;\1/" jbuild
 echo
-_build/unit_tests.byte
+bisect-summary _build/default/bisect????.out
 echo
-bisect-summary bisect????.out
-echo
-bisect-ppx-report -html _build/bisect bisect????.out
+bisect-ppx-report -html _build/bisect _build/default/bisect????.out
 echo "See coverage report (for General's unit tests) in $(pwd)/_build/bisect/index.html"
-rm -f bisect????.out
 
 # OPAM package
 # ============
@@ -36,8 +35,8 @@ opam reinstall --yes hashids
 # @todo Compare behavior with the Python and JavaScript implementations
 
 cd examples
-ocamlbuild -no-links -use-ocamlfind -package hashids example.byte example.native
-diff <(_build/example.native) <(echo "Jys1FWfnhqHy")
+jbuilder build example.exe
+diff <(_build/default/example.exe) <(echo "Jys1FWfnhqHy")
 cd ..
 
 # Documentation

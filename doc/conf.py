@@ -7,7 +7,7 @@ author = '<a href="http://vincent-jacques.net">Vincent Jacques</a>'
 copyright = ('2016-2017 {} <script>var jacquev6_ribbon_github="{}"</script>'.format(author, project) +
              '<script src="https://jacquev6.github.io/ribbon.js"></script>')
 
-version = "1.0.0"  # @todo Remove triplication of version (/opam, /META and /doc/conf.py)
+version = "1.0.0"  # @todo Remove duplication of version (/hashids.opam and /doc/conf.py)
 release = version
 
 master_doc = "index"
