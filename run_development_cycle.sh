@@ -5,7 +5,7 @@
 set -o errexit
 
 eval `opam config env`
-opam install --yes General bisect_ppx
+opam install --yes General bisect_ppx bisect-summary
 clear
 
 # Debug, tests, coverage
