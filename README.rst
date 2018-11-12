@@ -1,18 +1,29 @@
-*hashids-ocaml* is an OCaml (4.02.3+) implementation of `hashids <http://hashids.org/>`__.
+.. GENI: intro
+.. GENERATED SECTION, MANUAL EDITS WILL BE LOST
+
+*hashids-ocaml* is an OCaml (4.02.3+) implementation of `hashids <http://hashids.org/>`_.
 It generates short, unique, non-sequential ids from numbers, that you can also decode.
 It is compatible with version 1.0.0 of hashids.
 
-It's licensed under the `MIT license <http://choosealicense.com/licenses/mit/>`__.
-It's available on `OPAM <https://opam.ocaml.org/packages/hashids>`__,
-its `documentation <http://jacquev6.github.io/hashids-ocaml>`__
-and its `source code <https://github.com/jacquev6/hashids-ocaml>`__ are on GitHub.
+.. END OF GENERATED SECTION
 
-Questions? Remarks? Bugs? Want to contribute? `Open an issue <https://github.com/jacquev6/hashids-ocaml/issues>`__!
+.. GENI: info
+.. GENERATED SECTION, MANUAL EDITS WILL BE LOST
+
+It's licensed under the `MIT license <http://choosealicense.com/licenses/mit/>`_.
+It's available on `OPAM <https://opam.ocaml.org/packages/hashids>`_.
+Its `documentation <http://jacquev6.github.io/hashids-ocaml>`_
+and its `source code <https://github.com/jacquev6/hashids-ocaml>`_ are on GitHub.
+
+.. END OF GENERATED SECTION
+
+.. GENI: badges
+.. GENERATED SECTION, MANUAL EDITS WILL BE LOST
+
+Questions? Remarks? Bugs? Want to contribute? `Open an issue <https://github.com/jacquev6/hashids-ocaml/issues>`_!
 
 .. image:: https://img.shields.io/travis/jacquev6/hashids-ocaml/master.svg
     :target: https://travis-ci.org/jacquev6/hashids-ocaml
-
-.. @todo Use ocveralls to upload to coveralls.io
 
 .. image:: https://img.shields.io/github/issues/jacquev6/hashids-ocaml.svg
     :target: https://github.com/jacquev6/hashids-ocaml/issues
@@ -22,6 +33,8 @@ Questions? Remarks? Bugs? Want to contribute? `Open an issue <https://github.com
 
 .. image:: https://img.shields.io/github/stars/jacquev6/hashids-ocaml.svg
     :target: https://github.com/jacquev6/hashids-ocaml/stargazers
+
+.. END OF GENERATED SECTION
 
 Quick start
 ===========

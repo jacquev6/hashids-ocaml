@@ -13,7 +13,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "4.02.3"}
-  "dune" {build}
+  "dune" {build & >= "1.0.1"}
   "General" {>= "0.6.0"}
 ]
 synopsis:

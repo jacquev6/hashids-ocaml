@@ -1,0 +1,20 @@
+format: 1
+project:
+  name: hashids-ocaml
+  version: 1.0.1
+  has_github_pages: true
+  short_descriptions:
+    github: OCaml implementation of http://hashids.org
+    readme:
+      - "*hashids-ocaml* is an OCaml (4.02.3+) implementation of `hashids <http://hashids.org/>`_."
+      - It generates short, unique, non-sequential ids from numbers, that you can also decode.
+      - It is compatible with version 1.0.0 of hashids.
+    opam: "[hashids](http://hashids.org/): generate short, unique, non-sequential ids from numbers, that you can also decode"
+ocaml:
+  versions:
+    at_least: 4.02.3
+  package: hashids
+  dependencies:
+    run:
+      - General:
+          at_least: 0.6.0

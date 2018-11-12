@@ -1,6 +1,6 @@
 # coding: utf8
 
-# Copyright 2016-2017 Vincent Jacques <vincent@vincent-jacques.net>
+# Copyright 2016-2018 Vincent Jacques <vincent@vincent-jacques.net>
 
 project = "hashids-ocaml"
 author = '<a href="http://vincent-jacques.net">Vincent Jacques</a>'
